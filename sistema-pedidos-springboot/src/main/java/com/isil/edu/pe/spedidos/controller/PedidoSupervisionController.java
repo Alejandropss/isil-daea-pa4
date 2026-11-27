@@ -9,6 +9,9 @@ import com.isil.edu.pe.spedidos.service.PedidoRevisionService;
 import com.isil.edu.pe.spedidos.service.domain.RevisionPedido;
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.Set;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -27,6 +30,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 @RequestMapping("/supervision/pedidos")
 public class PedidoSupervisionController {
 
+  private static final Logger log = LoggerFactory.getLogger(PedidoSupervisionController.class);
   private static final Set<String> ESTADOS = Set.of("", "PENDIENTE", "REVISADO");
 
   private final PedidoRevisionService revisionService;
@@ -64,6 +68,12 @@ public class PedidoSupervisionController {
       return mostrarError(HttpStatus.CONFLICT, e, id, observacion, model, response);
     } catch (PedidoException e) {
       return mostrarError(HttpStatus.BAD_REQUEST, e, id, observacion, model, response);
+    } catch (DataAccessException e) {
+      // Falla de la base a mitad de la transacción: ya hubo rollback; no se muestra la traza técnica.
+      log.error("No se pudo registrar la revisión del pedido {}.", id, e);
+      return mostrarError(HttpStatus.INTERNAL_SERVER_ERROR,
+          new PedidoException("No se pudo registrar la revisión. No se guardó ningún cambio."), id, observacion,
+          model, response);
     }
   }
 

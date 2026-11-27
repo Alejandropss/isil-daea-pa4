@@ -10,6 +10,69 @@ El proyecto conserva una interfaz **Spring MVC + JSP** y expone una **API JSON**
 
 **Alcance:** Implementación académica para ejecución local. No constituye una solución de seguridad lista para producción.
 
+## PA4: revisión transaccional de pedidos
+
+Agregué la **revisión de pedidos**: el pedido queda `revisado = true` y se guarda una fila en `pedido_revision`. Las dos escrituras van en **una sola transacción local** de MySQL: se confirman juntas o se revierten juntas. La pantalla de supervisión consulta el resumen y el listado a `pedidos-reportes-service` (puerto 8083).
+
+![Arquitectura PA4](../docs/arquitectura-pa4.png)
+
+**Requisitos:** JDK 21, Maven, MySQL 8.x, SQL Server con `InventarioDB` (para registrar pedidos) y los tres proyectos de este repositorio.
+
+**Orden de arranque:** MySQL → SQL Server → WildFly (`inventario-service`, 8082) → **sistema-pedidos-springboot (8081)** → `pedidos-reportes-service` (8083). Sistema-pedidos va antes que reportes porque Hibernate crea las tablas al arrancar.
+
+```bash
+mysql -u root -p < ../database/Script_BD_usuario_MySql.sql
+mvn spring-boot:run
+```
+
+**Variables de entorno** (opcionales; sin ellas se usan los valores de laboratorio de `application.properties`): `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `PEDIDOS_OPERADOR_PASSWORD` y `PEDIDOS_CONSULTA_PASSWORD`.
+
+**Usuarios de laboratorio:** `operador` (puede revisar) y `consulta` (solo ve la supervisión). Sus claves están en la sección 6 de este README.
+
+### Cambios de esquema
+
+| Tabla | Cambio |
+|---|---|
+| `pedido` | Nueva columna `revisado BOOLEAN NOT NULL DEFAULT FALSE` |
+| `pedido_revision` | `id`, `pedido_id`, `observacion` (máx. 200), `fecha_revision`; FK a `pedido` y `UNIQUE (pedido_id)` |
+
+Hibernate los aplica solo (`ddl-auto=update`). El SQL equivalente está en `../database/PA4_cambios_esquema.sql`.
+
+### Rutas nuevas
+
+| Método | Ruta | Rol | Qué hace |
+|---|---|---|---|
+| GET | `/supervision/pedidos?estado=` | OPERADOR, CONSULTA | Pantalla de supervisión |
+| POST | `/supervision/pedidos/{id}/revisar` | OPERADOR (con CSRF) | Revisa el pedido y redirige a la supervisión (PRG) |
+
+Respuestas del POST: `302` correcto, `400` datos inválidos, `404` pedido inexistente, `409` ya revisado, `500` falla de la base (sin cambios).
+
+### Decisiones de borde
+
+- La observación se guarda sin espacios al inicio o al final y puede tener hasta 200 caracteres.
+- Si dos usuarios revisan a la vez, el `UPDATE ... AND revisado = FALSE` solo cambia una fila y el `UNIQUE` impide una segunda revisión: el segundo recibe `409`.
+- La transacción no llama a ningún servicio HTTP. Si el 8083 está apagado, revisar sigue funcionando.
+
+### Pruebas
+
+```bash
+mvn test
+```
+
+32 pruebas, 0 fallos (19 nuevas). Las nuevas son `PedidoRevisionServiceIntegrationTest` (commit, rollback real, duplicado e inexistente), `PedidoRevisionServiceValidacionTest`, `PedidoReporteRestClientRevisionTest` y `PedidoSupervisionControllerTest`.
+
+**Arreglos al proyecto base:** las pruebas del docente no compilaban. Tres pruebas apuntaban a clases que en la sesión 12 se movieron a `pedidos-reportes-service`, así que se retiraron. También se retiró un método que probaba `/api/v1/orders/resumen`, que ya no existe aquí. Además, `PedidoReporteWebControllerTest` ahora usa un cliente simulado para no depender del puerto 8083.
+
+### Reproducir los cinco casos
+
+Los scripts están en `../scripts/demo-pa4/`. Se ejecutan en orden, con las tablas vacías y el stock inicial: 1, 2, 3, 4a, 4b, 5, 5b y 5c. El 5b apaga el 8083, así que hay que encenderlo antes del 5c. Si `mysql` no está en el PATH, indicar su ruta en `MYSQL_EXE`.
+
+### Limitaciones
+
+- No hay transacción distribuida: el registro de pedidos reserva stock por HTTP en Inventario y eso no se revierte con un rollback local (así viene del proyecto base).
+- La revisión no se puede deshacer desde la pantalla.
+- Los usuarios están en memoria.
+
 ## Contenido
 
 1. [Objetivos y evolución académica](#1-objetivos-y-evolución-académica)

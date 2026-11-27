@@ -1,0 +1,57 @@
+@startuml arquitectura-pa4
+!pragma layout smetana
+skinparam defaultFontName Calibri
+skinparam defaultFontSize 13
+skinparam shadowing false
+skinparam roundCorner 8
+skinparam componentStyle rectangle
+skinparam ArrowColor #444444
+skinparam ArrowFontSize 11
+skinparam rectangle {
+  BorderColor #555555
+}
+skinparam database {
+  BackgroundColor #FFF4D6
+  BorderColor #A07800
+}
+skinparam component {
+  BackgroundColor #FFFFFF
+  BorderColor #555555
+}
+
+title PA4 - Revisión transaccional y servicio de reportes
+
+actor "Navegador" as nav
+
+rectangle "sistema-pedidos-springboot  -  puerto 8081" as app #EAF2FB {
+  component "Spring Security\n(login, roles, CSRF)" as sec
+  component "DispatcherServlet" as ds
+  component "PedidoSupervisionController\n(@Controller, Model, JSP, PRG)" as ctrl
+  component "PedidoRevisionService\n(@Transactional)" as srv
+  component "PedidoRevisionJdbcRepository\n(UPDATE pedido + INSERT pedido_revision)" as repo
+  component "PedidoReporteClient\n(RestClient)" as cli
+  component "PedidoService\n(registro existente)" as ps
+}
+
+rectangle "pedidos-reportes-service  -  puerto 8083" as rep #F1EEF8 {
+  component "RevisionReporteController\n(@RestController, JSON)" as rctrl
+  component "RevisionReporteService" as rsrv
+  component "RevisionReporteJdbcRepository" as rrepo
+}
+
+database "MySQL\npedidosdb\n(pedido, pedido_revision)" as mysql
+rectangle "inventario-service\nWildFly - puerto 8082\n(dependencia externa)" as inv #EEF7EA
+
+nav --> sec : HTTP
+sec --> ds : autorizado
+ds --> ctrl
+ctrl --> srv : revisar
+srv --> repo : transacción local
+repo --> mysql : escritura
+ctrl --> cli : listado y resumen
+cli --> rctrl : HTTP/JSON
+rctrl --> rsrv
+rsrv --> rrepo
+rrepo --> mysql : lectura
+ps ..> inv : reservar stock\n(registro de pedidos)
+@enduml
