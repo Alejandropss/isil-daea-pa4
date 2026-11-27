@@ -33,6 +33,11 @@ public class SecurityConfig {
               .hasAnyRole("OPERADOR", "CONSULTA")
             .requestMatchers(HttpMethod.GET, "/reportes/pedido", "/reportes/pedido/**")
               .hasAnyRole("OPERADOR", "CONSULTA")
+            // PA4: ambos roles ven la supervisión; solo OPERADOR puede revisar (escritura).
+            .requestMatchers(HttpMethod.POST, "/supervision/pedidos/*/revisar")
+              .hasRole("OPERADOR")
+            .requestMatchers(HttpMethod.GET, "/supervision/pedidos", "/supervision/pedidos/**")
+              .hasAnyRole("OPERADOR", "CONSULTA")
             .anyRequest().authenticated()
         )
         .formLogin(Customizer.withDefaults())

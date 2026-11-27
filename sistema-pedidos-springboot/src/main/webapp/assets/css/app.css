@@ -45,3 +45,22 @@ code { font-family: Consolas, monospace; }
     .titulo-tabla-acciones { flex-direction: column; align-items: stretch; }
     .titulo-tabla-acciones .boton-link { align-self: flex-start; }
 }
+
+/* PA4: supervisión de pedidos */
+.nota { margin-top: -8px; color: #667085; font-size: .9rem; }
+.alerta.aviso { background: #fff8e6; border: 1px solid #ecd38f; }
+.resumen-revisiones { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.resumen-revisiones span { display: block; color: #5f6368; font-size: .84rem; }
+.resumen-revisiones strong { font-size: 1.25rem; }
+.estado { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: .8rem; font-weight: 700; }
+.estado-revisado { background: #effaf1; color: #1e6b34; }
+.estado-pendiente { background: #fff8e6; color: #8a5a00; }
+.form-revisar { display: flex; gap: 8px; align-items: center; margin: 0; }
+.form-revisar input { min-height: 36px; width: 180px; }
+.form-revisar button, .form-filtro button { min-height: 36px; }
+.form-filtro { display: flex; gap: 8px; align-items: center; margin: 0; }
+@media (max-width: 720px) {
+    .resumen-revisiones { grid-template-columns: repeat(2, 1fr); }
+    .form-revisar { flex-direction: column; align-items: stretch; }
+    .form-revisar input { width: 100%; }
+}

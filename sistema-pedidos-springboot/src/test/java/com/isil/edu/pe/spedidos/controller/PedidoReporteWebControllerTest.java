@@ -7,12 +7,18 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
+import static org.mockito.Mockito.when;
+
+import com.isil.edu.pe.spedidos.client.reportes.PedidoReporteClient;
+import com.isil.edu.pe.spedidos.client.reportes.dto.ResumenPedidosResponse;
+import java.math.BigDecimal;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
@@ -26,11 +32,17 @@ class PedidoReporteWebControllerTest {
   @Autowired
   private WebApplicationContext context;
 
+  // PA4: cliente simulado para que la prueba no dependa de tener el puerto 8083 encendido.
+  @MockitoBean
+  private PedidoReporteClient pedidoReporteClient;
+
   @BeforeEach
   void setUp() {
     mockMvc = MockMvcBuilders.webAppContextSetup(context)
         .apply(springSecurity())
         .build();
+    when(pedidoReporteClient.obtenerResumen())
+        .thenReturn(new ResumenPedidosResponse(0, 0, BigDecimal.ZERO, BigDecimal.ZERO));
   }
 
   @Test

@@ -41,7 +41,15 @@ public class Pedido {
   @Column(nullable = false)
   private LocalDateTime fecha;
 
+  /** PA4: nace en false. El DEFAULT permite agregar la columna en MySQL aunque ya haya pedidos. */
+  @Column(nullable = false, columnDefinition = "boolean default false")
+  private boolean revisado = false;
+
   public Pedido() {
+  }
+
+  public boolean isRevisado() {
+    return revisado;
   }
 
   public Pedido(String cliente, String productoCodigo, String productoNombre, BigDecimal precioUnitario,

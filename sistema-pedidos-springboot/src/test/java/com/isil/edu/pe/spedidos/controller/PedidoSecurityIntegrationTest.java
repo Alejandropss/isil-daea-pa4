@@ -5,7 +5,6 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -71,15 +70,6 @@ class PedidoSecurityIntegrationTest {
     response.andExpect(status().isForbidden());
   }
 
-  @Test
-  @DisplayName("Return order summary JSON when CONSULTA role accesses protected API")
-  void returnOrderSummaryJsonWhenConsultaRoleAccessesProtectedApi() throws Exception {
-    // Arrange / Act
-    ResultActions response = mockMvc.perform(get("/api/v1/orders/resumen")
-        .with(user("consulta").roles("CONSULTA")));
-    // Assert
-    response.andExpect(status().isOk())
-        .andExpect(jsonPath("$.totalPedidos").isNumber())
-        .andExpect(jsonPath("$.totalUnidades").isNumber());
-  }
+  // PA4: se retiró la prueba de GET /api/v1/orders/resumen porque ese endpoint
+  // se movió a pedidos-reportes-service en la sesión 12 y aquí respondía 404.
 }

@@ -1,8 +1,11 @@
 package com.isil.edu.pe.spedidos.client.reportes;
 
+import com.isil.edu.pe.spedidos.client.reportes.dto.EstadisticasRevisionResponse;
 import com.isil.edu.pe.spedidos.client.reportes.dto.PedidoReporteResponse;
 import com.isil.edu.pe.spedidos.client.reportes.dto.ProductoVendidoResponse;
 import com.isil.edu.pe.spedidos.client.reportes.dto.ResumenPedidosResponse;
+import com.isil.edu.pe.spedidos.client.reportes.dto.RevisionPedidoResponse;
+import com.isil.edu.pe.spedidos.exception.PedidoException;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -72,6 +75,51 @@ public class PedidoReporteRestClient implements PedidoReporteClient {
     } catch (RestClientResponseException | ResourceAccessException e) {
       throw noDisponible(e);
     }
+  }
+
+  @Override
+  public List<RevisionPedidoResponse> listarRevisiones(String estado) {
+    try {
+      RestClient.RequestHeadersSpec<?> peticion = (estado == null || estado.isBlank())
+          ? restClient.get().uri(baseUrl + "/revisiones")
+          : restClient.get().uri(baseUrl + "/revisiones?estado={estado}", estado.trim());
+      List<RevisionPedidoResponse> response = peticion
+          .accept(MediaType.APPLICATION_JSON)
+          .retrieve()
+          .body(new ParameterizedTypeReference<List<RevisionPedidoResponse>>() { });
+      return response == null ? List.of() : response;
+    } catch (RestClientResponseException e) {
+      throw traducir(e);
+    } catch (ResourceAccessException e) {
+      throw noDisponible(e);
+    }
+  }
+
+  @Override
+  public EstadisticasRevisionResponse obtenerEstadisticasRevision() {
+    try {
+      EstadisticasRevisionResponse response = restClient.get()
+          .uri(baseUrl + "/estadisticas/revisiones")
+          .accept(MediaType.APPLICATION_JSON)
+          .retrieve()
+          .body(EstadisticasRevisionResponse.class);
+      if (response == null) {
+        throw new PedidoReporteNoDisponibleException("El servicio de reportes devolvió una respuesta vacía", null);
+      }
+      return response;
+    } catch (RestClientResponseException e) {
+      throw traducir(e);
+    } catch (ResourceAccessException e) {
+      throw noDisponible(e);
+    }
+  }
+
+  // PA4: un 4xx es un dato inválido (se informa tal cual); un 5xx es una falla del servicio remoto.
+  private RuntimeException traducir(RestClientResponseException e) {
+    if (e.getStatusCode().is4xxClientError()) {
+      return new PedidoException("pedidos-reportes-service rechazó la consulta (HTTP " + e.getStatusCode().value() + ").", e);
+    }
+    return noDisponible(e);
   }
 
   private PedidoReporteNoDisponibleException noDisponible(Exception e) {
